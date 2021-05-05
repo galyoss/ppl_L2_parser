@@ -77,12 +77,23 @@ export const applyEnv = (env: Env, v: string): Result<number> =>
     isGlobalEnv(env) ? applyGlobalEnv(env, v) :
     applyExtEnv(env, v);
 
-const applyGlobalEnv = (env: GlobalEnv, v: string): Result<number> => 
-    // Complete
+//returns address of variable named v in the store, if v exists
+const applyGlobalEnv = (env: GlobalEnv, v: string):
+    Result<number> => {
+    const ind:number  = unbox(env.vars).indexOf(v);
+    return ind === -1 ? makeFailure(`no such variable: ${v}`) :
+        makeOk(unbox(env.addresses)[ind]);
+}
 
-export const globalEnvAddBinding = (v: string, addr: number): void =>
-    // Complete
+export const globalEnvAddBinding = (v: string, addr: number): void => {
+    const newAddresses : number[] = unbox(theGlobalEnv.addresses).concat([addr])
+    const newVars : string[] = unbox(theGlobalEnv.vars).concat([v])
+    setBox(theGlobalEnv.vars, newVars)
+    setBox(theGlobalEnv.addresses, newAddresses)
+}
 
-const applyExtEnv = (env: ExtEnv, v: string): Result<number> =>
-    env.vars.includes(v) ? makeOk(env.addresses[env.vars.indexOf(v)]) :
+
+export const applyExtEnv = (env: ExtEnv, v: string): Result<number> =>{
+    return env.vars.includes(v) ? makeOk(env.addresses[env.vars.indexOf(v)]) :
     applyEnv(env.nextEnv, v);
+}
