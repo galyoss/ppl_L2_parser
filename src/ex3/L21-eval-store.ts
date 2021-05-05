@@ -88,6 +88,13 @@ const evalSetExp = (se : SetExp , env : Env) : Result<Value> => {
 }
 
 const evalDefineExps = (def: DefineExp, exps: Exp[]): Result<Value> =>{
+    //1. eval rhs. add rhs to store and get number. add number to globalenv. keep computing exps.
+
+    return bind(applicativeEval(def.val, theGlobalEnv), (x : Value) => {
+        const newAddress = extendStoreWithGetAdress(theStore, x)
+        globalEnvAddBinding(def.var.var, newAddress)
+        return evalSequence(exps, theGlobalEnv);
+    });
 
 }
 
@@ -106,11 +113,10 @@ export const evalParse = (s: string): Result<Value> =>
 const evalLet = (exp: LetExp, env: Env): Result<Value> => {
     const vals = mapResult((v: CExp) => applicativeEval(v, env), map((b: Binding) => b.val, exp.bindings));
     const vars = map((b: Binding) => b.var.var, exp.bindings);
-
     //add val to store -> get address of this val , add var to vars, add address to addresses[]
     return bind(vals, (vals: Value[]) => {
         const addresses = map((x: Value) => extendStoreWithGetAdress(theStore, x), vals)
         const newEnv = makeExtEnv(vars, addresses, env)
         return evalSequence(exp.body, newEnv);
-    }
+    });
 }
