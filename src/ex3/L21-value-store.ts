@@ -10,7 +10,7 @@ import { CExp, isPrimOp, PrimOp, VarDecl, unparse } from './L21-ast';
 import { Env } from './L21-env-store';
 
 // Add void for value of side-effect expressions - set! and define
-export type Value = SExpValue | Closure
+export type Value = SExpValue | Closure | void
 
 export type Functional = PrimOp | Closure;
 export const isFunctional = (x: any): x is Functional => isPrimOp(x) || isClosure(x);

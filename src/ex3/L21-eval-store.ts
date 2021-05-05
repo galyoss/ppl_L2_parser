@@ -24,7 +24,7 @@ import {
 import { isClosure, makeClosure, Closure, Value } from "./L21-value-store";
 import { applyPrimitive } from "./evalPrimitive-store";
 import { first, rest, isEmpty } from "../shared/list";
-import { Result, bind, safe2, mapResult, makeFailure, makeOk } from "../shared/result";
+import {Result, bind, safe2, mapResult, makeFailure, makeOk, isOk} from "../shared/result";
 import { parse as p } from "../shared/parser";
 
 // ========================================================
@@ -42,6 +42,7 @@ const applicativeEval = (exp: CExp, env: Env): Result<Value> =>
     isLetExp(exp) ? evalLet(exp, env) :
     isAppExp(exp) ? safe2((proc: Value, args: Value[]) => applyProcedure(proc, args))
                         (applicativeEval(exp.rator, env), mapResult((rand: CExp) => applicativeEval(rand, env), exp.rands)) :
+    isSetExp(exp) ? evalSetExp (exp, env):
     exp;
 
 export const isTrueValue = (x: Value): boolean =>
@@ -86,8 +87,10 @@ const evalSetExp = (se : SetExp , env : Env) : Result<Value> => {
 
 }
 
-const evalDefineExps = (def: DefineExp, exps: Exp[]): Result<Value> =>
-    // complete
+const evalDefineExps = (def: DefineExp, exps: Exp[]): Result<Value> =>{
+
+}
+
 
 // Main program
 // L2-BOX @@ Use GE instead of empty-env
@@ -99,13 +102,14 @@ export const evalParse = (s: string): Result<Value> =>
 
 // LET: Direct evaluation rule without syntax expansion
 // compute the values, extend the env, eval the body.
+
 const evalLet = (exp: LetExp, env: Env): Result<Value> => {
     const vals = mapResult((v: CExp) => applicativeEval(v, env), map((b: Binding) => b.val, exp.bindings));
     const vars = map((b: Binding) => b.var.var, exp.bindings);
 
     //add val to store -> get address of this val , add var to vars, add address to addresses[]
     return bind(vals, (vals: Value[]) => {
-        const addresses = ...
+        const addresses = map((x: Value) => extendStoreWithGetAdress(theStore, x), vals)
         const newEnv = makeExtEnv(vars, addresses, env)
         return evalSequence(exp.body, newEnv);
     }

@@ -14,12 +14,18 @@ const setBox = <T>(b: Box<T>, v: T): void => { b[0] = v; return; }
 // Store datatype
 export interface Store {
     tag: "Store";
-    vals: Box<Value>[];
+    vals: Box<Box<Value>[]>;
 }
 
 export const isStore = (x: any) => x.tag === "Store";
 export const makeEmptyStore = (): Store => ({tag: "Store", vals: makeBox([])}); //Verify that [] :any [] is OK
 export const theStore: Store = makeEmptyStore();
+
+//adds val to store, and returns the address of val
+export const extendStoreWithGetAdress = (s :Store, val: Value) : number =>{
+    const newStore = extendStore(s , val)
+    return (unbox(newStore.vals).length-1)
+}
 export const extendStore = (s: Store, val: Value): Store => {
     var insideArr = unbox(s.vals)
     setBox(s.vals, insideArr.concat([makeBox(val)]))
@@ -57,7 +63,7 @@ export interface ExtEnv {
     nextEnv: Env;
 }
 
-const makeGlobalEnv = (): GlobalEnv =>
+export const makeGlobalEnv = (): GlobalEnv =>
     ({tag: "GlobalEnv", vars: makeBox([]), addresses:makeBox([])});
 
 export const isGlobalEnv = (x: any): x is GlobalEnv => x.tag === "GlobalEnv";
