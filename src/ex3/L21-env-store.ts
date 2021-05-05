@@ -17,7 +17,7 @@ export interface Store {
     vals: Box<Value>[];
 }
 
-export const isStore = ...;
+export const isStore = (x: any) => x.tag === "Store";
 export const makeEmptyStore = ...;
 export const theStore: Store = 
 export const extendStore = (s: Store, val: Value): Store =>

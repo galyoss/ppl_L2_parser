@@ -50,7 +50,7 @@ export type Parsed = Exp | Program;
 
 export type Exp = DefineExp | CExp;
 export type AtomicExp = NumExp | BoolExp | StrExp | PrimOp | VarRef;
-export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp;
+export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | SetExp; //===GAL
 export type CExp =  AtomicExp | CompoundExp;
 
 export interface Program {tag: "Program"; exps: Exp[]; }
@@ -72,9 +72,9 @@ export interface SetExp {tag: "SetExp"; var: VarRef ; val: CExp; } //===========
 export interface LitExp {tag: "LitExp"; val: SExpValue; }
 
 // To help parser - define a type for reserved key words.
-export type SpecialFormKeyword = "lambda" | "let" | "if";
+export type SpecialFormKeyword = "lambda" | "let" | "if" | "set!"; //===ADDED set!
 const isSpecialFormKeyword = (x: string): x is SpecialFormKeyword =>
-    ["if", "lambda", "let", "quote"].includes(x);
+    ["if", "lambda", "let", "quote", "set!"].includes(x); //=====ADDED set!
 
 /*
     ;; <prim-op>  ::= + | - | * | / | < | > | = | not | and | or | eq? | string=?
@@ -111,8 +111,8 @@ export const makeBinding = (v: string, val: CExp): Binding =>
 export const makeLetExp = (bindings: Binding[], body: CExp[]): LetExp =>
     ({tag: "LetExp", bindings: bindings, body: body});
 //==========================================================GAL
-export const makeSetExp = (newvar: VarRef, val: CExp) : SetExp =>
-    ({tag: "SetExp", var: newvar, val: val})
+export const makeSetExp = (newVar: VarRef, val: CExp) : SetExp =>
+    ({tag: "SetExp", var: newVar, val: val})
 // L3
 export const makeLitExp = (val: SExpValue): LitExp =>
     ({tag: "LitExp", val: val});
@@ -145,7 +145,7 @@ export const isAtomicExp = (x: any): x is AtomicExp =>
     isPrimOp(x) || isVarRef(x);
 export const isCompoundExp = (x: any): x is CompoundExp =>
     isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || 
-    isLetExp(x) || isSetExp(x); //===================GAL
+    isLetExp(x) || isSetExp(x); //==============ADDED set!
 export const isCExp = (x: any): x is CExp =>
     isAtomicExp(x) || isCompoundExp(x);
 
@@ -186,7 +186,8 @@ export const parseL21SpecialForm = (op: SpecialFormKeyword, params: Sexp[]): Res
     op === "if" ? parseIfExp(params) :
     op === "lambda" ? parseProcExp(first(params), rest(params)) :
     op === "let" ? parseLetExp(first(params), rest(params)) :
-    op;
+    op === "set!" ? parseSetExp(params) : //===ADDED set!
+        op;
 
 export const parseDefine = (params: Sexp[]): Result<DefineExp> =>
     isEmpty(params) ? makeFailure("define missing 2 arguments") :
@@ -245,13 +246,14 @@ const parseBindings = (bindings: Sexp): Result<Binding[]> => {
 const parseLetExp = (bindings: Sexp, body: Sexp[]): Result<LetExp> =>
     safe2((bindings: Binding[], body: CExp[]) => makeOk(makeLetExp(bindings, body)))
         (parseBindings(bindings), mapResult(parseL21CExp, body));
-        const parseSetExp = (params: Sexp[]): Result<SetExp> =>
+
+const parseSetExp = (params: Sexp[]): Result<SetExp> =>
         isEmpty(params) ? makeFailure("set! missing 2 arguments") :
         isEmpty(rest(params)) ? makeFailure("set! missing 1 argument") :
         ! isEmpty(rest(rest(params))) ? makeFailure("set! has too many arguments") :
         parseGoodSetExp(first(params), second(params));
     
-    const parseGoodSetExp = (variable: Sexp, val: Sexp): Result<SetExp> =>
+const parseGoodSetExp = (variable: Sexp, val: Sexp): Result<SetExp> =>
         ! isIdentifier(variable) ? makeFailure("First arg of set! must be an identifier") :
         bind(parseL21CExp(val), (val: CExp) => makeOk(makeSetExp(makeVarRef(variable), val)));
 
@@ -305,6 +307,9 @@ const unparseBindings = (bdgs: Binding[]): string =>
 const unparseLetExp = (le: LetExp) : string => 
     `(let (${unparseBindings(le.bindings)}) ${unparseLExps(le.body)})`
 
+const unparseSetExp = (x : SetExp) : string => //===ADDED set!
+    `(set! ${x.var.var} ${unparse(x.val)}`;
+
 export const unparse = (exp: Parsed): string =>
     isBoolExp(exp) ? valueToString(exp.val) :
     isNumExp(exp) ? valueToString(exp.val) :
@@ -318,4 +323,5 @@ export const unparse = (exp: Parsed): string =>
     isLetExp(exp) ? unparseLetExp(exp) :
     isDefineExp(exp) ? `(define ${exp.var.var} ${unparse(exp.val)})` :
     isProgram(exp) ? `(L21 ${unparseLExps(exp.exps)})` :
+    isSetExp(exp) ? unparseSetExp(exp) : //===ADDED set!
     exp;
