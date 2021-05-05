@@ -18,17 +18,25 @@ export interface Store {
 }
 
 export const isStore = (x: any) => x.tag === "Store";
-export const makeEmptyStore = ...;
-export const theStore: Store = 
-export const extendStore = (s: Store, val: Value): Store =>
-    // Complete
+export const makeEmptyStore = (): Store => ({tag: "Store", vals: makeBox([])}); //Verify that [] :any [] is OK
+export const theStore: Store = makeEmptyStore();
+export const extendStore = (s: Store, val: Value): Store => {
+    var insideArr = unbox(s.vals)
+    setBox(s.vals, insideArr.concat([makeBox(val)]))
+    return s
+}
     
 export const applyStore = (store: Store, address: number): Result<Value> =>
-    // Complete
+    unbox(store.vals).length < address || address < 0? makeFailure("no such address") :
+        makeOk(unbox(unbox(store.vals)[address]));
 
-    
-export const setStore = (store: Store, address: number, val: Value): void => 
-    // Complete
+//    
+export const setStore = (store: Store, address: number, val: Value): void => {
+    var insideArr = unbox(store.vals)
+    if (address < 0 || address > insideArr.length)
+        return;
+    setBox(insideArr[address], val);
+}
 
 
 // ========================================================
